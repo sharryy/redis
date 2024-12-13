@@ -1,3 +1,60 @@
 <?php
 
-it('passes')->assertTrue(true);
+use App\Node;
+use App\Lexer;
+use App\Token;
+
+it('can lex integers', function () {
+    $command = ':1\r\n';
+
+    $result = (new Lexer())->tokenize($command);
+
+    expect($result)->toMatchArray([
+        new Node(Token::INTEGER, 1),
+        new Node(Token::TERMINATOR, '\r\n'),
+    ]);
+});
+
+it('can lex integers with multiple digits', function () {
+    $command = ':123\r\n';
+
+    $result = (new Lexer())->tokenize($command);
+
+    expect($result)->toMatchArray([
+        new Node(Token::INTEGER, 123),
+        new Node(Token::TERMINATOR, '\r\n'),
+    ]);
+});
+
+it('can lex simple strings', function () {
+    $command = '+Hello\r\n';
+
+    $result = (new Lexer())->tokenize($command);
+
+    expect($result)->toMatchArray([
+        new Node(Token::SIMPLE_STRING, 'Hello'),
+        new Node(Token::TERMINATOR, '\r\n'),
+    ]);
+});
+
+it('can lex bulk strings', function () {
+    $command = '$5\r\nHello\r\n';
+
+    $result = (new Lexer())->tokenize($command);
+
+    expect($result)->toMatchArray([
+        new Node(Token::BULK_STRING, 'Hello'),
+        new Node(Token::TERMINATOR, '\r\n'),
+    ]);
+});
+
+it('can lex bulk strings with double digit length', function () {
+    $command = '$11\r\nHello World\r\n';
+
+    $result = (new Lexer())->tokenize($command);
+
+    expect($result)->toMatchArray([
+        new Node(Token::BULK_STRING, 'Hello World'),
+        new Node(Token::TERMINATOR, '\r\n'),
+    ]);
+});
