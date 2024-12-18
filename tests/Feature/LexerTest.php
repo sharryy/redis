@@ -58,3 +58,11 @@ it('can lex bulk strings with double digit length', function () {
         new Node(Token::TERMINATOR, '\r\n'),
     ]);
 });
+
+it('can lex simple array', function () {
+    $command = '*2\r\n$5\r\nHello\r\n$5\r\nWorld\r\n';
+
+    $result = (new Lexer())->tokenize($command);
+
+    dd($result);
+})->skip();

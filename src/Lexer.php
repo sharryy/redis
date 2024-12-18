@@ -39,11 +39,10 @@ class Lexer
                 while (++$i < $length) {
                     $char = $data[$i];
                     if ($char === '\\') {
-                        $terminator = mb_substr($data, $i, 4, 'UTF-8');
-                        if ($terminator === '\\r\\n') {
+                        if ($this->isTerminator($data, $i)) {
                             $this->tokens[] = new Node(Token::INTEGER,
                                 (int) mb_substr($data, $this->position + 1, $i - $this->position - 1, 'UTF-8'));
-                            $this->tokens[] = new Node(Token::TERMINATOR, $terminator);
+                            $this->tokens[] = Node::getTerminator();
                             $this->position = $i + 4;
                             break;
                         }
@@ -59,16 +58,13 @@ class Lexer
                         }
                         $string .= $char;
                     } else {
-                        $terminator = mb_substr($data, $i, 4, 'UTF-8');
-
-                        if ($terminator === '\\r\\n') {
-
+                        if ($this->isTerminator($data, $i)) {
                             if ($i >= $length) {
                                 throw new Exception('Invalid string');
                             }
 
                             $this->tokens[] = new Node(Token::SIMPLE_STRING, $string);
-                            $this->tokens[] = new Node(Token::TERMINATOR, $terminator);
+                            $this->tokens[] = Node::getTerminator();
                             $this->position = $i + 4;
                             break;
                         }
@@ -88,9 +84,7 @@ class Lexer
 
                         $stringLength .= $digit;
                     } else {
-                        $terminator = mb_substr($data, $i, 4, 'UTF-8');
-
-                        if ($terminator === '\\r\\n') {
+                        if ($this->isTerminator($data, $i)) {
                             $this->position = $i + 4;
                             break;
                         }
@@ -99,9 +93,7 @@ class Lexer
 
                 $stringLength = (int) $stringLength;
 
-                $terminator = mb_substr($data, $i, 4, 'UTF-8');
-
-                if ($terminator !== '\\r\\n') {
+                if (! $this->isTerminator($data, $i)) {
                     throw new Exception("Invalid string");
                 }
 
@@ -109,19 +101,46 @@ class Lexer
 
                 $string = mb_substr($data, $i, $stringLength, 'UTF-8');
 
-                $terminator = mb_substr($data, $i + $stringLength, 4, 'UTF-8');
-
-                if ($terminator !== '\\r\\n') {
+                if (! $this->isTerminator($data, $i + $stringLength)) {
                     throw new Exception("Invalid string");
                 }
 
                 $this->tokens[] = new Node(Token::BULK_STRING, $string);
-                $this->tokens[] = new Node(Token::TERMINATOR, $terminator);
+                $this->tokens[] = Node::getTerminator();
                 $this->position = $i + $stringLength + 4;
+            } elseif ($char === '*') {
+                $arrayLength = $data[++$i];
+
+                if (! is_numeric($arrayLength)) {
+                    throw new Exception("Invalid array length");
+                }
+
+                $i++;
+
+                if (! $this->isTerminator($data, $i)) {
+                    throw new Exception("Invalid array");
+                }
+
+                $this->tokens[] = Node::getArray();
+
+                $i += 4;
+
+                $notation = $data[$i];
+
+                if ($notation === '$') {
+                    // TODO: Implement bulk string array
+                }
             }
             $i++;
         }
 
         return $this->tokens;
+    }
+
+    private function isTerminator(string $data, int $index): bool
+    {
+        $terminator = mb_substr($data, $index, 4, 'UTF-8');
+
+        return $terminator === '\\r\\n';
     }
 }

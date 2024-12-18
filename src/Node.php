@@ -16,4 +16,14 @@ class Node implements Stringable
     {
         return sprintf('%s: %s', $this->type->name, $this->value);
     }
+
+    public static function getTerminator(): self
+    {
+        return new Node(Token::TERMINATOR, Token::TERMINATOR->value);
+    }
+
+    public static function getArray(): self
+    {
+        return new Node(Token::ARRAY, Token::ARRAY->value);
+    }
 }
