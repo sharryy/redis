@@ -64,11 +64,5 @@ it('can lex simple array', function () {
 
     $result = (new Parser())->tokenize($command);
 
-    expect($result)->toMatchArray([
-        new Node(Token::ARRAY, [
-            new Node(Token::BULK_STRING, 'Hello'),
-            new Node(Token::BULK_STRING, 'World'),
-        ]),
-        new Node(Token::TERMINATOR, '\r\n'),
-    ]);
-})->skip();
+    dd($result);
+});

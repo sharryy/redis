@@ -28,17 +28,48 @@ class Parser
         while ($this->position <= $length) {
             $char = mb_substr($data, $this->position, 1, 'UTF-8');
 
+            if ($char == ':') {
+                $this->parseIntegers($data, $length);
+            } elseif ($char == '+') {
+                $this->parseSimpleString($data, $length);
+            } elseif ($char == '$') {
+                $this->parseBulkStrings($data, $length);
+            } elseif ($char == '*') {
+                $this->parseArrays($data, $length);
+            }
+
+            $this->position++;
+        }
+
+        return $this->tokens;
+    }
+
+    private function parseArrays(string $data, int $length): void
+    {
+        $this->tokens[] = Node::getArray();
+
+        $len = '';
+        $digit = $data[++$this->position];
+
+        while (is_numeric($digit)) {
+            $len .= $digit;
+            $digit = $data[++$this->position];
+        }
+
+        if ($this->isTerminator($data, $this->position)) {
+            $this->position += 4;
+        }
+
+        while ($this->position < $length) {
+            $char = $data[$this->position];
+
             match ($char) {
                 ':' => $this->parseIntegers($data, $length),
                 '+' => $this->parseSimpleString($data, $length),
                 '$' => $this->parseBulkStrings($data, $length),
                 default => throw new RuntimeException('Invalid character')
             };
-
-            $this->position++;
         }
-
-        return $this->tokens;
     }
 
     private function parseIntegers(string $data, int $length): void
