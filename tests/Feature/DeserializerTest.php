@@ -34,5 +34,5 @@ it('can deserialise bulk strings', function () {
 it('can lex', function () {
     $command = '*4\r\n$5\r\nHello\r\n$5\r\nWorld\r\n:1\r\n*1\r\n$6\r\nNested\r\n';
 
-    $result = (new \App\Lexer())->tokenize($command);
+    $result = (new \App\Parser())->tokenize($command);
 });

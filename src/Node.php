@@ -8,7 +8,7 @@ class Node implements Stringable
 {
     public function __construct(
         public Token $type,
-        public string|int $value
+        public string|int|array $value
     ) {
     }
 
