@@ -60,9 +60,14 @@ it('can lex bulk strings with double digit length', function () {
 });
 
 it('can lex simple array', function () {
-    $command = '*2\r\n$5\r\nHello\r\n$5\r\nWorld\r\n';
+    $command = '*1\r\n:1\r\n';
 
     $result = (new Parser())->tokenize($command);
 
-    dd($result);
-});
+    expect($result)->toMatchArray([
+        new Node(Token::ARRAY, [
+            new Node(Token::INTEGER, 1),
+        ]),
+        new Node(Token::TERMINATOR, '\r\n'),
+    ]);
+})->skip();

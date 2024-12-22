@@ -29,11 +29,14 @@ class Parser
             $char = mb_substr($data, $this->position, 1, 'UTF-8');
 
             if ($char == ':') {
-                $this->parseIntegers($data, $length);
+                $this->tokens[] = $this->parseIntegers($data, $length);
+                $this->tokens[] = Node::getTerminator();
             } elseif ($char == '+') {
-                $this->parseSimpleString($data, $length);
+                $this->tokens[] = $this->parseSimpleString($data, $length);
+                $this->tokens[] = Node::getTerminator();
             } elseif ($char == '$') {
-                $this->parseBulkStrings($data, $length);
+                $this->tokens[] = $this->parseBulkStrings($data, $length);
+                $this->tokens[] = Node::getTerminator();
             } elseif ($char == '*') {
                 $this->parseArrays($data, $length);
             }
@@ -72,7 +75,7 @@ class Parser
         }
     }
 
-    private function parseIntegers(string $data, int $length): void
+    private function parseIntegers(string $data, int $length): ?Node
     {
         $integer = $data[++$this->position];
 
@@ -90,15 +93,15 @@ class Parser
             }
 
             if ($this->isTerminator($data, $this->position)) {
-                $this->tokens[] = new Node(Token::INTEGER, (int) $integer);
-                $this->tokens[] = Node::getTerminator();
                 $this->position += 4;
-                break;
+                return new Node(Token::INTEGER, (int) $integer);
             }
         }
+
+        return null;
     }
 
-    private function parseSimpleString(string $data, int $length): void
+    private function parseSimpleString(string $data, int $length): ?Node
     {
         $string = '';
 
@@ -115,16 +118,17 @@ class Parser
                         throw new RuntimeException('Invalid string');
                     }
 
-                    $this->tokens[] = new Node(Token::SIMPLE_STRING, $string);
-                    $this->tokens[] = Node::getTerminator();
                     $this->position += 4;
+                    return new Node(Token::SIMPLE_STRING, $string);
                     break;
                 }
             }
         }
+
+        return null;
     }
 
-    private function parseBulkStrings(string $data, int $length): void
+    private function parseBulkStrings(string $data, int $length): ?Node
     {
         $stringLength = '';
 
@@ -154,9 +158,9 @@ class Parser
             throw new RuntimeException("Invalid string");
         }
 
-        $this->tokens[] = new Node(Token::BULK_STRING, $string);
-        $this->tokens[] = Node::getTerminator();
         $this->position = $this->position + $stringLength + 4;
+
+        return new Node(Token::BULK_STRING, $string);
     }
 
     private function isTerminator(string $data, int $index): bool
