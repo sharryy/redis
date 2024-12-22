@@ -38,7 +38,8 @@ class Parser
                 $this->tokens[] = $this->parseBulkStrings($data, $length);
                 $this->tokens[] = Node::getTerminator();
             } elseif ($char == '*') {
-                $this->parseArrays($data, $length);
+                $this->tokens[] = $this->parseArrays($data, $length);
+                $this->tokens[] = Node::getTerminator();
             }
 
             $this->position++;
@@ -47,9 +48,9 @@ class Parser
         return $this->tokens;
     }
 
-    private function parseArrays(string $data, int $length): void
+    private function parseArrays(string $data, int $length): ?Node
     {
-        $this->tokens[] = Node::getArray();
+        $result = [];
 
         $len = '';
         $digit = $data[++$this->position];
@@ -66,13 +67,25 @@ class Parser
         while ($this->position < $length) {
             $char = $data[$this->position];
 
-            match ($char) {
+            $node = match ($char) {
                 ':' => $this->parseIntegers($data, $length),
                 '+' => $this->parseSimpleString($data, $length),
                 '$' => $this->parseBulkStrings($data, $length),
+                '*' => $this->parseArrays($data, $length),
                 default => throw new RuntimeException('Invalid character')
             };
+
+            if ($node) {
+                $result[] = $node;
+            }
+
         }
+
+        if (count($result) !== (int) $len) {
+            throw new RuntimeException('Invalid array');
+        }
+
+        return new Node(Token::ARRAY, $result);
     }
 
     private function parseIntegers(string $data, int $length): ?Node
